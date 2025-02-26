@@ -1,14 +1,48 @@
 import { Suspense } from "react";
-import { useRoutes, Routes, Route } from "react-router-dom";
+import { useRoutes, Routes, Route, Navigate } from "react-router-dom";
 import routes from "tempo-routes";
 import AdminLayout from "./components/layout/AdminLayout";
+import AuthLayout from "./components/auth/AuthLayout";
+import LoginForm from "./components/auth/LoginForm";
+import Dashboard from "./components/dashboard";
+import StampCards from "./components/stamp-cards";
+import GiftCards from "./components/gift-cards";
+import Customers from "./components/customers";
+import Orders from "./components/orders";
+import Settings from "./components/settings";
 
 function App() {
+  // Check authentication state from localStorage
+  const isAuthenticated = localStorage.getItem("isAuthenticated") === "true";
+
   return (
     <Suspense fallback={<p>Loading...</p>}>
       <>
         <Routes>
-          <Route element={<AdminLayout />}>
+          {/* Public Routes */}
+          <Route
+            path="/login"
+            element={
+              isAuthenticated ? (
+                <Navigate to="/" replace />
+              ) : (
+                <AuthLayout>
+                  <LoginForm />
+                </AuthLayout>
+              )
+            }
+          />
+
+          {/* Protected Routes */}
+          <Route
+            element={
+              isAuthenticated ? (
+                <AdminLayout />
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            }
+          >
             <Route path="/" element={<Dashboard />} />
             <Route path="/stamp-cards" element={<StampCards />} />
             <Route path="/gift-cards" element={<GiftCards />} />
@@ -16,14 +50,9 @@ function App() {
             <Route path="/orders" element={<Orders />} />
             <Route path="/settings" element={<Settings />} />
           </Route>
-          <Route
-            path="/login"
-            element={
-              <AuthLayout>
-                <LoginForm />
-              </AuthLayout>
-            }
-          />
+
+          {/* Catch all route */}
+          <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
         {import.meta.env.VITE_TEMPO === "true" && useRoutes(routes)}
       </>

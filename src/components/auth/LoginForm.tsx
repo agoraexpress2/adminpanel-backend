@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
@@ -21,17 +22,27 @@ interface LoginFormProps {
   isLoading?: boolean;
 }
 
-const LoginForm = ({
-  onSubmit = () => {},
-  isLoading = false,
-}: LoginFormProps) => {
+const LoginForm = ({ isLoading = false }: LoginFormProps) => {
+  const navigate = useNavigate();
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [rememberMe, setRememberMe] = React.useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit({ email, password, rememberMe });
+    // For demo purposes, we'll use hardcoded credentials
+    if (email === "admin@example.com" && password === "admin123") {
+      // Set authentication state
+      localStorage.setItem("isAuthenticated", "true");
+      if (rememberMe) {
+        localStorage.setItem("email", email);
+      }
+      // Redirect to dashboard
+      navigate("/");
+      window.location.reload(); // Force reload to update auth state
+    } else {
+      alert("Invalid credentials. Try admin@example.com / admin123");
+    }
   };
 
   return (
