@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { getCustomers, toggleCustomerStatus } from "@/api/customers";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -27,53 +28,54 @@ export default function Customers() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [customers, setCustomers] = useState([
-    {
-      id: 1,
-      name: "Ahmed Ali",
-      phone: "+966 50 123 4567",
-      email: "ahmed@example.com",
-      pin: "1234",
-      branch: "Main Branch",
-      stampCards: 2,
-      giftCards: 1,
-      joinDate: "2024-01-15",
-      isActive: true,
-    },
-    {
-      id: 2,
-      name: "Sara Ahmed",
-      phone: "+966 55 234 5678",
-      email: "sara@example.com",
-      pin: "5678",
-      branch: "Downtown Branch",
-      stampCards: 1,
-      giftCards: 2,
-      joinDate: "2024-02-20",
-      isActive: true,
-    },
-  ]);
-  const customers = [
-    {
-      id: 1,
-      name: "Ahmed Ali",
-      phone: "+966 50 123 4567",
-      email: "ahmed@example.com",
-      stampCards: 2,
-      giftCards: 1,
-      joinDate: "2024-01-15",
-    },
-    {
-      id: 2,
-      name: "Sara Ahmed",
-      phone: "+966 55 234 5678",
-      email: "sara@example.com",
-      stampCards: 1,
-      giftCards: 2,
-      joinDate: "2024-02-20",
-    },
-    // Add more customers here
-  ];
+  const [customers, setCustomers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const fetchCustomers = async () => {
+      try {
+        setLoading(true);
+        const data = await getCustomers();
+        setCustomers(data);
+        setError("");
+      } catch (err) {
+        console.error("Error fetching customers:", err);
+        setError("Failed to load customers. Please try again.");
+        // Fallback data for demo if API fails
+        setCustomers([
+          {
+            id: 1,
+            name: "Ahmed Ali",
+            phone: "+966 50 123 4567",
+            email: "ahmed@example.com",
+            pin: "1234",
+            branch: "Main Branch",
+            stampCards: 2,
+            giftCards: 1,
+            joinDate: "2024-01-15",
+            isActive: true,
+          },
+          {
+            id: 2,
+            name: "Sara Ahmed",
+            phone: "+966 55 234 5678",
+            email: "sara@example.com",
+            pin: "5678",
+            branch: "Downtown Branch",
+            stampCards: 1,
+            giftCards: 2,
+            joinDate: "2024-02-20",
+            isActive: true,
+          },
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCustomers();
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -84,6 +86,8 @@ export default function Customers() {
           Add Customer
         </Button>
       </div>
+
+      {error && <p className="text-red-500">{error}</p>}
 
       <Card>
         <CardContent className="p-6">
@@ -111,87 +115,119 @@ export default function Customers() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {customers
-                  .filter((customer) => customer.phone.includes(searchQuery))
-                  .map((customer) => (
-                    <TableRow
-                      key={customer.id}
-                      className="cursor-pointer hover:bg-accent/50"
-                    >
-                      <TableCell>
-                        <div className="flex items-center space-x-3">
-                          <User className="h-6 w-6 text-muted-foreground" />
-                          <div>
-                            <p className="font-medium">{customer.name}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {customer.email}
-                            </p>
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-4">
+                      Loading customers...
+                    </TableCell>
+                  </TableRow>
+                ) : customers.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-4">
+                      No customers found
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  customers
+                    .filter((customer) => customer.phone.includes(searchQuery))
+                    .map((customer) => (
+                      <TableRow
+                        key={customer.id}
+                        className="cursor-pointer hover:bg-accent/50"
+                      >
+                        <TableCell>
+                          <div className="flex items-center space-x-3">
+                            <User className="h-6 w-6 text-muted-foreground" />
+                            <div>
+                              <p className="font-medium">{customer.name}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {customer.email}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>{customer.phone}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-4">
-                          <div className="flex items-center space-x-1">
-                            <CreditCard className="h-4 w-4 text-blue-500" />
-                            <span className="text-sm">
-                              {customer.stampCards}
-                            </span>
+                        </TableCell>
+                        <TableCell>{customer.phone}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-4">
+                            <div className="flex items-center space-x-1">
+                              <CreditCard className="h-4 w-4 text-blue-500" />
+                              <span className="text-sm">
+                                {customer.stampCards}
+                              </span>
+                            </div>
+                            <div className="flex items-center space-x-1">
+                              <Gift className="h-4 w-4 text-purple-500" />
+                              <span className="text-sm">
+                                {customer.giftCards}
+                              </span>
+                            </div>
                           </div>
-                          <div className="flex items-center space-x-1">
-                            <Gift className="h-4 w-4 text-purple-500" />
-                            <span className="text-sm">
-                              {customer.giftCards}
-                            </span>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {new Date(customer.joinDate).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedCustomer(customer);
-                            setIsEditDialogOpen(true);
-                          }}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            const updatedCustomer = {
-                              ...customer,
-                              isActive: !customer.isActive,
-                            };
-                            setCustomers(
-                              customers.map((c) =>
-                                c.id === updatedCustomer.id
-                                  ? updatedCustomer
-                                  : c,
-                              ),
-                            );
-                            alert(
-                              `Customer account ${!customer.isActive ? "activated" : "deactivated"} successfully`,
-                            );
-                          }}
-                        >
-                          <Ban
-                            className={`h-4 w-4 ${!customer.isActive ? "text-red-500" : ""}`}
-                            title={
-                              customer.isActive
-                                ? "Deactivate Account"
-                                : "Activate Account"
-                            }
-                          />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                        </TableCell>
+                        <TableCell>
+                          {new Date(customer.joinDate).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedCustomer(customer);
+                              setIsEditDialogOpen(true);
+                            }}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              try {
+                                const newStatus = !customer.isActive;
+                                await toggleCustomerStatus(
+                                  customer.id,
+                                  newStatus,
+                                );
+
+                                const updatedCustomer = {
+                                  ...customer,
+                                  isActive: newStatus,
+                                };
+
+                                setCustomers(
+                                  customers.map((c) =>
+                                    c.id === updatedCustomer.id
+                                      ? updatedCustomer
+                                      : c,
+                                  ),
+                                );
+
+                                alert(
+                                  `Customer account ${newStatus ? "activated" : "deactivated"} successfully`,
+                                );
+                              } catch (err) {
+                                console.error(
+                                  "Error toggling customer status:",
+                                  err,
+                                );
+                                alert(
+                                  "Failed to update customer status. Please try again.",
+                                );
+                              }
+                            }}
+                          >
+                            <Ban
+                              className={`h-4 w-4 ${!customer.isActive ? "text-red-500" : ""}`}
+                              title={
+                                customer.isActive
+                                  ? "Deactivate Account"
+                                  : "Activate Account"
+                              }
+                            />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                )}
               </TableBody>
             </Table>
           </div>

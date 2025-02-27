@@ -10,6 +10,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
+import { createCustomer } from "@/api/customers";
 
 interface AddCustomerDialogProps {
   open: boolean;
@@ -34,10 +35,24 @@ export function AddCustomerDialog({
     branch: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
-    onOpenChange(false);
+    setLoading(true);
+    setError("");
+
+    try {
+      const newCustomer = await createCustomer(formData);
+      onSubmit(newCustomer);
+      onOpenChange(false);
+    } catch (err) {
+      console.error("Error creating customer:", err);
+      setError("Failed to add customer. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -102,8 +117,11 @@ export function AddCustomerDialog({
               />
             </div>
           </div>
+          {error && <p className="text-sm text-red-500 mt-2">{error}</p>}
           <DialogFooter>
-            <Button type="submit">Add Customer</Button>
+            <Button type="submit" disabled={loading}>
+              {loading ? "Adding..." : "Add Customer"}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

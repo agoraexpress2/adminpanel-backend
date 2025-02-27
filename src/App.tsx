@@ -1,5 +1,11 @@
-import { Suspense } from "react";
-import { useRoutes, Routes, Route, Navigate } from "react-router-dom";
+import { Suspense, useEffect } from "react";
+import {
+  useRoutes,
+  Routes,
+  Route,
+  Navigate,
+  useNavigate,
+} from "react-router-dom";
 import routes from "tempo-routes";
 import AdminLayout from "./components/layout/AdminLayout";
 import AuthLayout from "./components/auth/AuthLayout";
@@ -12,8 +18,16 @@ import Orders from "./components/orders";
 import Settings from "./components/settings";
 
 function App() {
+  const navigate = useNavigate();
   // Check authentication state from localStorage
   const isAuthenticated = localStorage.getItem("isAuthenticated") === "true";
+
+  useEffect(() => {
+    // Redirect to login if not authenticated
+    if (!isAuthenticated && window.location.pathname !== "/login") {
+      navigate("/login");
+    }
+  }, [isAuthenticated, navigate]);
 
   return (
     <Suspense fallback={<p>Loading...</p>}>

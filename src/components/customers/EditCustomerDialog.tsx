@@ -9,7 +9,8 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { updateCustomer } from "@/api/customers";
 
 interface Customer {
   id: number;
@@ -44,10 +45,40 @@ export function EditCustomerDialog({
     isActive: customer?.isActive ?? true,
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (customer) {
+      setFormData({
+        id: customer.id || 0,
+        name: customer.name || "",
+        phone: customer.phone || "",
+        email: customer.email || "",
+        pin: customer.pin || "",
+        branch: customer.branch || "",
+        isActive: customer.isActive ?? true,
+      });
+    }
+  }, [customer]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
-    onOpenChange(false);
+    setLoading(true);
+    setError("");
+
+    try {
+      if (customer?.id) {
+        await updateCustomer(customer.id, formData);
+      }
+      onSubmit(formData);
+      onOpenChange(false);
+    } catch (err) {
+      console.error("Error updating customer:", err);
+      setError("Failed to update customer. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -122,8 +153,11 @@ export function EditCustomerDialog({
               />
             </div>
           </div>
+          {error && <p className="text-sm text-red-500 mt-2">{error}</p>}
           <DialogFooter>
-            <Button type="submit">Save Changes</Button>
+            <Button type="submit" disabled={loading}>
+              {loading ? "Saving..." : "Save Changes"}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

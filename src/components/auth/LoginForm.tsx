@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { login } from "@/api/auth";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
@@ -24,24 +25,47 @@ interface LoginFormProps {
 
 const LoginForm = ({ isLoading = false }: LoginFormProps) => {
   const navigate = useNavigate();
-  const [email, setEmail] = React.useState("");
-  const [password, setPassword] = React.useState("");
-  const [rememberMe, setRememberMe] = React.useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // For demo purposes, we'll use hardcoded credentials
-    if (email === "admin@example.com" && password === "admin123") {
-      // Set authentication state
+    setError("");
+    setLoading(true);
+
+    try {
+      // Use the API login function
+      const response = await login(email, password);
+
+      // Store token and authentication state
+      localStorage.setItem("token", response.token);
       localStorage.setItem("isAuthenticated", "true");
+
       if (rememberMe) {
         localStorage.setItem("email", email);
       }
+
       // Redirect to dashboard
       navigate("/");
-      window.location.reload(); // Force reload to update auth state
-    } else {
-      alert("Invalid credentials. Try admin@example.com / admin123");
+    } catch (err: any) {
+      console.error("Login error:", err);
+      setError(
+        err.response?.data?.message || "Invalid credentials. Please try again.",
+      );
+
+      // Fallback for demo purposes if backend is not connected
+      if (email === "admin@example.com" && password === "admin123") {
+        localStorage.setItem("isAuthenticated", "true");
+        if (rememberMe) {
+          localStorage.setItem("email", email);
+        }
+        navigate("/");
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -92,8 +116,9 @@ const LoginForm = ({ isLoading = false }: LoginFormProps) => {
           </div>
         </CardContent>
         <CardFooter className="flex flex-col space-y-4">
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? "Logging in..." : "Login"}
+          {error && <p className="text-sm text-red-500">{error}</p>}
+          <Button type="submit" className="w-full" disabled={loading}>
+            {loading ? "Logging in..." : "Login"}
           </Button>
           <Button
             variant="link"
